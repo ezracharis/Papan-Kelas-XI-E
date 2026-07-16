@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Papan Kelas — Jadwal &amp; Tugas</title>
+<style>
+  :root{
+    --paper:#F4F6FA;
+    --paper-line:#DDE3EE;
+    --ink:#1E2A47;
+    --ink-soft:#54607A;
+    --binder:#22335C;
+    --binder-light:#334676;
+    --amber:#E0982B;
+    --amber-soft:#FBEBD2;
+    --coral:#D14D4D;
+    --coral-soft:#FBE1E1;
+    --green:#3E8F63;
+    --green-soft:#DFF1E7;
+    --card:#FFFFFF;
+    --radius:14px;
+    --serif:'Fraunces', Georgia, 'Times New Roman', serif;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', 'Courier New', monospace;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 28px,
+      var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+
+  .wrap{max-width:980px;margin:0 auto;}
+
+  /* Header */
+  .header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .kelas-name-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+  #kelasName{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:34px;
+    color:var(--binder);
+    border:none;
+    background:transparent;
+    outline:none;
+    border-bottom:2px dashed transparent;
+    padding:2px 0;
+    max-width:520px;
+  }
+  #kelasName:hover, #kelasName:focus{border-bottom:2px dashed var(--binder-light);}
+  .header-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+  .share-hint{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    padding:8px 12px;
+    border-radius:10px;
+  }
+
+  /* Binder tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:0;}
+  .tab{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:14.5px;
+    padding:12px 20px 14px;
+    border:none;
+    cursor:pointer;
+    background:#DCE3F0;
+    color:var(--binder);
+    border-radius:12px 12px 0 0;
+    position:relative;
+    top:2px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .tab:hover{background:#CFD8EC;}
+  .tab.active{
+    background:var(--card);
+    box-shadow:0 -2px 0 var(--amber) inset;
+    top:0;
+  }
+  .panel{
+    background:var(--card);
+    border-radius:0 14px 14px 14px;
+    padding:26px;
+    box-shadow:0 1px 3px rgba(30,42,71,.08), 0 10px 30px -18px rgba(30,42,71,.25);
+  }
+  .panel.first-tab{border-radius:0 14px 14px 14px;}
+
+  .hidden{display:none !important;}
+
+  /* Toolbar */
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+  .toolbar h2{font-family:var(--serif);font-size:22px;margin:0;color:var(--binder);font-weight:600;}
+  .btn{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:13.5px;
+    padding:10px 16px;
+    border-radius:9px;
+    border:none;
+    cursor:pointer;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--binder);color:#fff;}
+  .btn-primary:hover{background:var(--binder-light);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--paper-line);}
+  .btn-ghost:hover{background:var(--paper);}
+  .btn-danger-text{background:none;border:none;color:var(--coral);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--sans);padding:4px 6px;}
+
+  /* Schedule grid */
+  .day-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+  @media (max-width:820px){.day-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.day-grid{grid-template-columns:1fr;}}
+  .day-col{background:var(--paper);border-radius:12px;padding:12px 10px;min-height:120px;}
+  .day-col h3{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .entry{
+    border-radius:9px;
+    padding:9px 10px;
+    margin-bottom:8px;
+    background:var(--amber-soft);
+    border-left:4px solid var(--amber);
+    position:relative;
+  }
+  .entry .time{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  .entry .subj{font-weight:700;font-size:13.5px;margin:2px 0 1px;color:var(--ink);}
+  .entry .meta{font-size:11.5px;color:var(--ink-soft);}
+  .entry .del{position:absolute;top:6px;right:6px;opacity:0;transition:opacity .12s;}
+  .entry:hover .del{opacity:1;}
+  .empty-day{font-size:12px;color:#A3ADC2;font-style:italic;padding:6px 2px;}
+
+  /* Task list */
+  .filter-chips{display:flex;gap:8px;margin-bottom:18px;}
+  .chip{
+    font-family:var(--sans);font-weight:600;font-size:13px;
+    padding:7px 14px;border-radius:999px;border:1px solid var(--paper-line);
+    background:var(--card);color:var(--ink-soft);cursor:pointer;
+  }
+  .chip.active{background:var(--binder);color:#fff;border-color:var(--binder);}
+
+  .task-card{
+    display:flex;gap:14px;align-items:flex-start;
+    background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+    border-left:4px solid var(--ink-soft);
+  }
+  .task-card.tugas{border-left-color:var(--amber);}
+  .task-card.materi{border-left-color:var(--green);}
+  .task-card.overdue{border-left-color:var(--coral);}
+  .task-main{flex:1;min-width:0;}
+  .task-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;}
+  .task-title{font-weight:700;font-size:15px;color:var(--ink);}
+  .badge{
+    font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.03em;
+    padding:2px 8px;border-radius:999px;text-transform:uppercase;
+  }
+  .badge.tugas{background:var(--amber-soft);color:#8A5A0F;}
+  .badge.materi{background:var(--green-soft);color:#265C40;}
+  .task-subj{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .task-desc{font-size:13.5px;color:var(--ink-soft);margin:4px 0;white-space:pre-wrap;}
+  .task-link{font-size:12.5px;color:var(--binder);text-decoration:none;font-weight:600;}
+  .task-link:hover{text-decoration:underline;}
+  .task-deadline{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .task-deadline.overdue-text{color:var(--coral);font-weight:600;}
+  .task-deadline.soon-text{color:var(--amber);font-weight:600;}
+  .task-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+
+  /* Modal / form */
+  .overlay{
+    position:fixed;inset:0;background:rgba(30,42,71,.42);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal{
+    background:#fff;border-radius:16px;padding:26px;max-width:440px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal h3{font-family:var(--serif);margin:0 0 16px;font-size:20px;color:var(--binder);}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=url], .field select, .field textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--paper-line);border-radius:8px;
+    font-family:var(--sans);font-size:13.5px;background:var(--paper);color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:56px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .radio-row{display:flex;gap:14px;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
+  .empty-state{text-align:center;padding:40px 10px;color:var(--ink-soft);}
+  .empty-state .big{font-size:32px;margin-bottom:6px;}
+  .loading-note{font-size:12.5px;color:var(--ink-soft);font-family:var(--mono);padding:10px 0;}
+  .footer-note{text-align:center;font-size:11.5px;color:#A3ADC2;margin-top:24px;font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div>
+      <div class="eyebrow">Papan Kelas</div>
+      <div class="kelas-name-row">
+        <input id="kelasName" value="Kelas Kita" spellcheck="false" />
+      </div>
+      <div class="header-sub">Jadwal, tugas, deadline, dan materi kelas — dalam satu halaman.</div>
+    </div>
+    <div class="share-hint">💾 Data tersimpan di browser perangkat ini saja (tidak otomatis tersinkron ke perangkat lain)</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="jadwal">📅 Jadwal Pelajaran</button>
+    <button class="tab" data-tab="tugas">📌 Tugas, Deadline &amp; Materi</button>
+  </div>
+
+  <div class="panel">
+
+    <div id="tab-jadwal">
+      <div class="toolbar">
+        <h2>Jadwal Mingguan</h2>
+        <button class="btn btn-primary" id="btnAddJadwal">+ Tambah Jadwal</button>
+      </div>
+      <div id="jadwalLoading" class="loading-note">Memuat jadwal…</div>
+      <div class="day-grid" id="dayGrid"></div>
+    </div>
+
+    <div id="tab-tugas" class="hidden">
+      <div class="toolbar">
+        <h2>Tugas &amp; Materi</h2>
+        <button class="btn btn-primary" id="btnAddTugas">+ Tambah Item</button>
+      </div>
+      <div class="filter-chips">
+        <button class="chip active" data-filter="semua">Semua</button>
+        <button class="chip" data-filter="tugas">Tugas</button>
+        <button class="chip" data-filter="materi">Materi</button>
+      </div>
+      <div id="tugasLoading" class="loading-note">Memuat daftar…</div>
+      <div id="tugasList"></div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">DATA TERSIMPAN LOKAL DI BROWSER MASING-MASING PERANGKAT (LOCALSTORAGE)</div>
+</div>
+
+<script>
+const DAYS = ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+const SUBJ_COLORS = [
+  {bg:'#FBEBD2',bd:'#E0982B'}, {bg:'#DFF1E7',bd:'#3E8F63'}, {bg:'#E3E8FB',bd:'#5566C9'},
+  {bg:'#FBE1E1',bd:'#D14D4D'}, {bg:'#F3E3FB',bd:'#9B59B6'}, {bg:'#E1F3FB',bd:'#2E9BC9'}
+];
+function colorFor(str){
+  let h=0; for(let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  return SUBJ_COLORS[h % SUBJ_COLORS.length];
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let jadwalItems = [];
+let tugasItems = [];
+let currentFilter = 'semua';
+
+// ---------- Storage helpers ----------
+// Catatan: versi ini memakai localStorage, artinya data tersimpan HANYA
+// di browser/perangkat masing-masing orang, tidak otomatis tersinkron
+// ke teman sekelas lain meski memakai link/halaman yang sama.
+const STORAGE_PREFIX = 'papan-kelas:';
+async function loadKey(key, fallback){
+  try{
+    const raw = localStorage.getItem(STORAGE_PREFIX + key);
+    if(raw){
+      return JSON.parse(raw);
+    }
+    return fallback;
+  }catch(e){
+    console.error('Gagal memuat', key, e);
+    return fallback;
+  }
+}
+async function saveKey(key, value){
+  try{
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    return true;
+  }catch(e){
+    console.error('Gagal menyimpan', key, e);
+    return false;
+  }
+}
+
+// ---------- Init ----------
+async function init(){
+  const name = await loadKey('kelas:info', {name:'Kelas Kita'});
+  document.getElementById('kelasName').value = name.name || 'Kelas Kita';
+
+  jadwalItems = await loadKey('jadwal:items', []);
+  tugasItems = await loadKey('tugas:items', []);
+
+  document.getElementById('jadwalLoading').classList.add('hidden');
+  document.getElementById('tugasLoading').classList.add('hidden');
+
+  renderJadwal();
+  renderTugas();
+}
+
+document.getElementById('kelasName').addEventListener('change', async (e)=>{
+  await saveKey('kelas:info', {name: e.target.value.trim() || 'Kelas Kita'});
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.getElementById('tab-jadwal').classList.toggle('hidden', target!=='jadwal');
+    document.getElementById('tab-tugas').classList.toggle('hidden', target!=='tugas');
+  });
+});
+
+// ---------- Jadwal render ----------
+function renderJadwal(){
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  DAYS.forEach(day=>{
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    const items = jadwalItems.filter(i=>i.day===day).sort((a,b)=> (a.start||'').localeCompare(b.start||''));
+    let html = `<h3>${day}</h3>`;
+    if(items.length===0){
+      html += `<div class="empty-day">Belum ada jadwal</div>`;
+    } else {
+      items.forEach(it=>{
+        const c = colorFor(it.subject);
+        html += `
+          <div class="entry" style="background:${c.bg};border-left-color:${c.bd}">
+            <button class="del btn-danger-text" onclick="deleteJadwal('${it.id}')">✕</button>
+            <div class="time">${it.start||'--:--'}–${it.end||'--:--'}</div>
+            <div class="subj">${escapeHtml(it.subject)}</div>
+            <div class="meta">${escapeHtml(it.room||'')}${it.teacher? ' · '+escapeHtml(it.teacher):''}</div>
+          </div>`;
+      });
+    }
+    col.innerHTML = html;
+    grid.appendChild(col);
+  });
+}
+
+window.deleteJadwal = async function(id){
+  if(!confirm('Hapus jadwal ini?')) return;
+  jadwalItems = jadwalItems.filter(i=>i.id!==id);
+  renderJadwal();
+  await saveKey('jadwal:items', jadwalItems);
+};
+
+// ---------- Tugas render ----------
+function daysLeftLabel(deadline){
+  if(!deadline) return {text:'Tanpa deadline', cls:''};
+  const now = new Date();
+  const dl = new Date(deadline);
+  const diffMs = dl - now;
+  const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+  const fmt = dl.toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}) +
+              (deadline.length>10 ? ' · ' + dl.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '');
+  if(diffMs < 0) return {text:`Lewat deadline · ${fmt}`, cls:'overdue-text'};
+  if(diffDays <= 2) return {text:`${diffDays} hari lagi · ${fmt}`, cls:'soon-text'};
+  return {text:`${diffDays} hari lagi · ${fmt}`, cls:''};
+}
+
+function renderTugas(){
+  const list = document.getElementById('tugasList');
+  let items = [...tugasItems];
+  if(currentFilter !== 'semua'){
+    items = items.filter(i=>i.type===currentFilter);
+  }
+  items.sort((a,b)=>{
+    if(!a.deadline && !b.deadline) return 0;
+    if(!a.deadline) return 1;
+    if(!b.deadline) return -1;
+    return new Date(a.deadline) - new Date(b.deadline);
+  });
+
+  if(items.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="big">🗂️</div>Belum ada item. Klik "Tambah Item" untuk mulai mengisi papan.</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(it=>{
+    const dl = daysLeftLabel(it.deadline);
+    const overdue = it.deadline && new Date(it.deadline) < new Date();
+    return `
+      <div class="task-card ${it.type}${overdue? ' overdue':''}">
+        <div class="task-main">
+          <div class="task-top">
+            <span class="task-title">${escapeHtml(it.title)}</span>
+            <span class="badge ${it.type}">${it.type}</span>
+            ${it.subject? `<span class="task-subj">${escapeHtml(it.subject)}</span>`:''}
+          </div>
+          ${it.desc? `<div class="task-desc">${escapeHtml(it.desc)}</div>`:''}
+          ${it.link? `<a class="task-link" href="${escapeHtml(it.link)}" target="_blank" rel="noopener">🔗 Buka materi/lampiran</a>`:''}
+          <div class="task-deadline ${dl.cls}">${dl.text}</div>
+        </div>
+        <div class="task-side">
+          <button class="btn-danger-text" onclick="deleteTugas('${it.id}')">Hapus</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+window.deleteTugas = async function(id){
+  if(!confirm('Hapus item ini?')) return;
+  tugasItems = tugasItems.filter(i=>i.id!==id);
+  renderTugas();
+  await saveKey('tugas:items', tugasItems);
+};
+
+document.querySelectorAll('.chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderTugas();
+  });
+});
+
+// ---------- Modals ----------
+function openModal(html){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal">${html}</div>`;
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+document.getElementById('btnAddJadwal').addEventListener('click', ()=>{
+  const overlay = openModal(`
+    <h3>Tambah Jadwal</h3>
+    <div class="field">
+      <label>Mata Pelajaran</label>
+      <input type="text" id="fSubject" placeholder="Contoh: Matematika" />
+    </div>
+    <div class="field">
+      <label>Hari</label>
+      <select id="fDay">${DAYS.map(d=>`<option>${d}</option>`).join('')}</select>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Jam Mulai</label><input type="time" id="fStart"/></div>
+      <div class="field"><label>Jam Selesai</label><input type="time" id="fEnd"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Ruangan (opsional)</label><input type="text" id="fRoom" placeholder="R.301"/></div>
+      <div class="field"><label>Guru (opsional)</label><input type="text" id="fTeacher" placeholder="Bu Sari"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelJadwal">Batal</button>
+      <button class="btn btn-primary" id="saveJadwal">Simpan</button>
+    </div>
+  `);
+  overlay.querySelector('#cancelJadwal').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#saveJadwal').addEventListener('click', async ()=>{
+    const subject = overlay.querySelector('#fSubject').value.trim();
+    if(!subject){ alert('Nama mata pelajaran wajib diisi'); return; }
+    const item = {
+      id: uid(),
+      subject,
+      day: overlay.querySelector('#fDay').value,
+      start: overlay.querySelector('#fStart').value,
+      end: overlay.querySelector('#fEnd').value,
+      room: overlay.querySelector('#fRoom').value.trim(),
+      teacher: overlay.querySelector('#fTeacher').value.trim(),
+    };
+    jadwalItems.push(item);
+    renderJadwal();
+    overlay.remove();
+    const ok = await saveKey('jadwal:items', jadwalItems);
+    if(!ok) alert('Gagal menyimpan data di browser ini (mungkin penyimpanan penuh atau diblokir).');
+  });
+});
+
+document.getElementById('btnAddTugas').addEventListener('click', ()=>{
+  const overlay = openModal(`
+    <h3>Tambah Tugas / Materi</h3>
+    <div class="field">
+      <label>Jenis</label>
+      <div class="radio-row">
+        <label><input type="radio" name="fType" value="tugas" checked/> Tugas</label>
+        <label><input type="radio" name="fType" value="materi"/> Materi</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Judul</label>
+      <input type="text" id="fTitle" placeholder="Contoh: Latihan Bab 3"/>
+    </div>
+    <div class="field">
+      <label>Mata Pelajaran (opsional)</label>
+      <input type="text" id="fSubj" placeholder="Fisika"/>
+    </div>
+    <div class="field">
+      <label>Deskripsi (opsional)</label>
+      <textarea id="fDesc" placeholder="Detail tugas atau ringkasan materi"></textarea>
+    </div>
+    <div class="field">
+      <label>Deadline (opsional untuk materi)</label>
+      <input type="date" id="fDeadline"/>
+    </div>
+    <div class="field">
+      <label>Link materi/lampiran (opsional)</label>
+      <input type="url" id="fLink" placeholder="https://..."/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelTugas">Batal</button>
+      <button class="btn btn-primary" id="saveTugas">Simpan</button>
+    </div>
+  `);
+  overlay.querySelector('#cancelTugas').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#saveTugas').addEventListener('click', async ()=>{
+    const title = overlay.querySelector('#fTitle').value.trim();
+    if(!title){ alert('Judul wajib diisi'); return; }
+    const type = overlay.querySelector('input[name=fType]:checked').value;
+    const item = {
+      id: uid(),
+      type,
+      title,
+      subject: overlay.querySelector('#fSubj').value.trim(),
+      desc: overlay.querySelector('#fDesc').value.trim(),
+      deadline: overlay.querySelector('#fDeadline').value,
+      link: overlay.querySelector('#fLink').value.trim(),
+      created: Date.now(),
+    };
+    tugasItems.push(item);
+    renderTugas();
+    overlay.remove();
+    const ok = await saveKey('tugas:items', tugasItems);
+    if(!ok) alert('Gagal menyimpan data di browser ini (mungkin penyimpanan penuh atau diblokir).');
+  });
+});
+
+init();
+</script>
+</body>
+</html>
